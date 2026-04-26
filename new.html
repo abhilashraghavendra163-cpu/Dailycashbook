@@ -1,0 +1,2376 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Cashbook & Denomination Tracker</title>
+
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-glow: rgba(99, 102, 241, 0.5);
+      --secondary: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --bg: #f3f4f6;
+      --surface: rgba(255, 255, 255, 0.8);
+      --surface-solid: #ffffff;
+      --text: #1f2937;
+      --text-muted: #6b7280;
+      --border: rgba(229, 231, 235, 0.5);
+      --radius: 16px;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --glass: blur(12px) saturate(180%);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --surface: rgba(30, 41, 59, 0.7);
+      --surface-solid: #1e293b;
+      --primary: #818cf8;
+      --primary-dark: #6366f1;
+      --secondary: #34d399;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: rgba(51, 65, 85, 0.5);
+    }
+
+    [data-theme="dark"] select,
+    [data-theme="dark"] option {
+      background: #1E293B !important;
+      color: #F8FAFC !important;
+    }
+
+    [data-theme="dark"] .badge-success {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34D399;
+    }
+
+    [data-theme="dark"] .badge-danger {
+      background: rgba(239, 68, 68, 0.2);
+      color: #F87171;
+    }
+
+    [data-theme="dark"] .flatpickr-calendar {
+      background: #1E293B;
+      border-color: #334155;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    }
+
+    [data-theme="dark"] .flatpickr-month,
+    [data-theme="dark"] .flatpickr-weekday {
+      color: #F8FAFC;
+      fill: #F8FAFC;
+    }
+
+    [data-theme="dark"] .flatpickr-day {
+      color: #F8FAFC;
+    }
+
+    [data-theme="dark"] .flatpickr-day:hover {
+      background: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Layout & Cards */
+    .card {
+      background: var(--surface);
+      backdrop-filter: var(--glass);
+      -webkit-backdrop-filter: var(--glass);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .flex {
+      display: flex;
+    }
+
+    .grid {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    }
+
+    .justify-between {
+      justify-content: space-between;
+    }
+
+    .items-center {
+      align-items: center;
+    }
+
+    .gap-2 {
+      gap: 0.5rem;
+    }
+
+    .gap-4 {
+      gap: 1rem;
+    }
+
+    .mb-4 {
+      margin-bottom: 1rem;
+    }
+
+    .mt-4 {
+      margin-top: 1rem;
+    }
+
+    /* Text */
+    .title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      letter-spacing: -0.05em;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .text-success {
+      color: var(--secondary);
+    }
+
+    .text-danger {
+      color: var(--danger);
+    }
+
+    .text-warning {
+      color: var(--warning);
+    }
+
+    /* Forms & Buttons */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-size: 0.95rem;
+      background: var(--surface-solid);
+      color: var(--text);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-glow);
+      transform: scale(1.01);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.85rem 1.5rem;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      gap: 0.5rem;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 10px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px var(--primary-glow);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+      transform: translateY(-2px);
+    }
+
+    .btn-warning {
+      background: var(--warning);
+      color: white;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-outline:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* Tables */
+    .table-responsive {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface-solid);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th,
+    td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: rgba(0, 0, 0, 0.02);
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* App Views */
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+      animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface);
+      backdrop-filter: var(--glass);
+      -webkit-backdrop-filter: var(--glass);
+      padding: 0.75rem 1.25rem;
+      border-radius: 20px;
+      margin-bottom: 2rem;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 1rem;
+      z-index: 100;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+    }
+
+    .nav-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .nav-tab {
+      cursor: pointer;
+      padding: 0.75rem 1.25rem;
+      border-radius: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .nav-tab:hover {
+      background: rgba(0, 0, 0, 0.05);
+      color: var(--text);
+    }
+
+    .nav-tab.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 15px var(--primary-glow);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-left: auto;
+    }
+
+    /* Badges */
+    .badge {
+      padding: 0.4rem 0.85rem;
+      border-radius: 50px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.15);
+      color: #059669;
+    }
+
+    .badge-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #dc2626;
+    }
+
+    /* Calendar Marker Style */
+    .has-transaction {
+      position: relative;
+      font-weight: 800 !important;
+      color: var(--secondary) !important;
+    }
+
+    .has-transaction:after {
+      content: '';
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      background: var(--secondary);
+      border-radius: 50%;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 0.75rem;
+      }
+
+      .navbar {
+        flex-direction: column;
+        padding: 0.75rem;
+        gap: 1rem;
+        position: relative;
+        top: 0;
+      }
+
+      .nav-tabs {
+        width: 100%;
+        justify-content: space-around;
+      }
+
+      .nav-actions {
+        width: 100%;
+        justify-content: center;
+        border-top: 1px solid var(--border);
+        padding-top: 1rem;
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .title {
+        font-size: 1.5rem;
+      }
+    }
+
+    /* Confetti Animation */
+    @keyframes confetti-fall {
+      0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+    .confetti {
+      position: fixed; width: 10px; height: 10px; z-index: 9999;
+      pointer-events: none; animation: confetti-fall 3s linear forwards;
+    }
+    /* Theme Selector in Login */
+    .theme-preview {
+      width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+      border: 2px solid transparent; transition: all 0.2s;
+    }
+    .theme-preview.active { border-color: var(--primary); transform: scale(1.2); }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <!-- 1. LOGIN VIEW -->
+    <div id="view-login" class="view active">
+      <!-- Floating Theme Toggle for Login -->
+      <div style="position:fixed; top:1.5rem; right:1.5rem; z-index:1000;">
+        <button id="theme-btn-login" class="btn btn-outline" style="padding:0.6rem 1.2rem; border-radius:50px; background:var(--surface); backdrop-filter:var(--glass); box-shadow:var(--shadow);" onclick="app.toggleTheme()">🌙 Dark</button>
+      </div>
+
+      <div class="card"
+        style="max-width: 400px; margin: 4rem auto; border: none; background: rgba(255,255,255,0.9); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+        <div class="text-center mb-6">
+          <div
+            style="width: 64px; height: 64px; background: var(--primary); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; box-shadow: 0 10px 20px var(--primary-glow);">
+            <span style="font-size: 2rem; color: white;">📖</span>
+          </div>
+          <h2 class="title" style="margin-bottom: 0;">Daily Cashbook</h2>
+          <p class="subtitle">Secure Financial Management</p>
+        </div>
+        <div id="login-error" class="text-danger mb-4"
+          style="display:none;font-size:0.9rem; background: rgba(239, 68, 68, 0.1); padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
+        </div>
+
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="login-username" value="" onkeydown="if(event.key==='Enter') app.login()">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div style="position: relative;">
+            <input type="password" id="login-password" value="" style="width:100%; padding-right:2.5rem;"
+              onkeydown="if(event.key==='Enter') app.login()">
+            <span onclick="app.togglePassword('login-password', this)"
+              style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; opacity:0.6;">👁️</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width: 100%;" onclick="app.login()">Login</button>
+
+        <div class="mt-4" style="border-top: 1px solid var(--border); padding-top: 1rem;">
+          <details id="setup-details">
+            <summary style="cursor:pointer; font-size:0.8rem; color:var(--text-muted); user-select:none;">⚙️ First time
+              setup? Click to paste your Script URL</summary>
+            <div style="margin-top:0.75rem;">
+              <label style="font-size:0.8rem; color:var(--text-muted);">Google Apps Script URL</label>
+              <div class="flex gap-2" style="margin-top:0.35rem;">
+                <input type="text" id="setup-url-input" placeholder="https://script.google.com/macros/s/..."
+                  style="font-size:0.8rem;">
+                <button class="btn btn-warning" style="white-space:nowrap; font-size:0.8rem;"
+                  onclick="app.quickSetupUrl()">Save & Connect</button>
+              </div>
+              <p id="setup-url-msg" style="font-size:0.75rem; margin-top:0.4rem; color:var(--text-muted);">Paste the Web
+                App URL from your Google Apps Script deployment.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. ADMIN VIEW -->
+    <div id="view-admin" class="view">
+      <div class="navbar">
+        <div class="flex items-center gap-4">
+          <button class="btn btn-primary" style="padding: 0.5rem 1rem;" onclick="app.goToAppView()">← Back to
+            App</button>
+          <h2 style="font-size: 1.25rem;">Admin Dashboard</h2>
+        </div>
+        <button class="btn btn-outline" onclick="app.logout()">Logout</button>
+      </div>
+
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <h3 class="title text-warning">System Configuration</h3>
+        <div class="form-group mb-0">
+          <label>Google Apps Script URL (Backend Link)</label>
+          <div class="flex gap-2">
+            <div style="position: relative; flex-grow: 1;">
+              <input type="text" id="config-apps-url" placeholder="Paste your new Google Apps Script URL here..."
+                style="width:100%;">
+            </div>
+            <button class="btn btn-warning" id="btn-save-url" onclick="app.saveAppsScriptUrl()">Update &
+              Connect</button>
+            <button class="btn btn-outline" id="btn-clear-url" onclick="app.clearAppsScriptUrl()">Disconnect /
+              Offline</button>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;" id="config-status-msg">Currently
+            using: Offline Storage Mode</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="title">User Management</h3>
+        <div class="grid grid-2 mb-4">
+          <input type="text" id="new-username" placeholder="New Username">
+          <div style="position: relative;">
+            <input type="password" id="new-password" placeholder="Password" style="width:100%; padding-right:2.5rem;">
+            <span onclick="app.togglePassword('new-password', this)"
+              style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; opacity:0.6;">👁️</span>
+          </div>
+          <select id="new-role">
+            <option value="Cashier">Cashier</option>
+            <option value="Admin">Admin</option>
+          </select>
+          <button class="btn btn-primary" id="btn-create-user" onclick="app.createUser()">Create User</button>
+          <button class="btn btn-warning" id="btn-update-user" onclick="app.updateUser()" style="display:none;">Save
+            Changes</button>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="admin-users-list"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DEBUG PANEL -->
+      <div class="card" style="margin-top:1.5rem; border: 2px solid var(--warning);">
+        <h3 class="title text-warning">🔧 Connection Debug</h3>
+        <p class="subtitle mb-4">Click to test what the server is returning. Share the result to diagnose issues.</p>
+        <div class="flex gap-2 mb-4">
+          <button class="btn btn-warning" onclick="app.debugTest()">▶ Run Debug Test</button>
+        </div>
+        <pre id="debug-output"
+          style="background:#0f172a; color:#10b981; padding:1rem; border-radius:8px; font-size:0.75rem; max-height:300px; overflow:auto; white-space:pre-wrap; display:none;"></pre>
+      </div>
+
+      <!-- TRANSACTION AUDIT LOG -->
+      <div class="card" style="margin-top:1.5rem;">
+        <div class="flex items-center gap-4 mb-4" style="justify-content:space-between; flex-wrap:wrap;">
+          <div>
+            <h3 class="title" style="margin-bottom:0;">📋 Transaction Audit Log</h3>
+            <p class="subtitle" style="margin:0;">See who entered each transaction</p>
+          </div>
+          <div class="flex gap-2" style="flex-wrap:wrap;">
+            <select id="audit-user-filter" onchange="app.loadAuditLog()" style="padding:0.4rem; border-radius:6px; border:1px solid var(--border);">
+              <option value="">All Users</option>
+            </select>
+            <select id="audit-type-filter" onchange="app.loadAuditLog()" style="padding:0.4rem; border-radius:6px; border:1px solid var(--border);">
+              <option value="">All Types</option>
+              <option value="Deposit">Receipts</option>
+              <option value="Expense">Payments</option>
+            </select>
+            <button class="btn btn-primary" onclick="app.loadAuditLog()">🔄 Refresh</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Entered By</th>
+              </tr>
+            </thead>
+            <tbody id="audit-log-list"><tr><td colspan="6" class="text-center text-muted">Click Refresh to load</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- GLOBAL HISTORIC SEARCH ENGINE -->
+      <div class="card" style="margin-top:1.5rem;">
+        <h3 class="title text-success">Global Historic Search</h3>
+        <p class="subtitle mb-4">Deep scan all historic spreadsheets for raw keywords.</p>
+        <div class="flex gap-2 mb-4">
+          <input type="text" id="admin-search-query" placeholder="Type generic keyword (e.g., Cement)">
+          <button class="btn btn-primary" onclick="app.adminSearch()">Search Databanks</button>
+        </div>
+        <div id="admin-search-results"></div>
+      </div>
+    </div>
+
+    <!-- 3. MAIN APP VIEW (Cashier/Admin) -->
+    <div id="view-app" class="view">
+      <div class="navbar">
+        <div class="nav-tabs">
+          <div class="nav-tab active" onclick="app.switchTab('daily-entry')" id="tab-daily-entry">Daily Entry</div>
+          <div class="nav-tab" onclick="app.switchTab('bank-entry')" id="tab-bank-entry">Bank Entry</div>
+          <div class="nav-tab" onclick="app.switchTab('cash-count')" id="tab-cash-count">Cash Count</div>
+          <div class="nav-tab" onclick="app.switchTab('reports')" id="tab-reports">Reports</div>
+        </div>
+        <div class="nav-actions">
+          <div class="user-info">
+            <span id="current-user-display-name" class="user-name"></span>
+            <span id="current-user-display-role" class="user-role"></span>
+          </div>
+          <span id="sync-status-nav" class="badge" style="margin-right:0.5rem; display:none;"></span>
+          <button id="nav-btn-admin" class="btn btn-primary" style="display:none; padding: 0.5rem 1rem;"
+            onclick="app.goToAdminView()">Admin Portal</button>
+          <button class="btn btn-outline" style="padding: 0.5rem 1rem;" onclick="app.toggleHelp()">❓ Help</button>
+          <button id="theme-btn" class="btn btn-outline" style="padding: 0.5rem 1rem; margin-right: 0.5rem;"
+            onclick="app.toggleTheme()">🌙 Dark</button>
+          <button class="btn btn-outline"
+            style="padding: 0.5rem 1rem; border-color: var(--danger); color: var(--danger);"
+            onclick="app.logout()">Logout</button>
+        </div>
+      </div>
+
+      <!-- DAILY ENTRY TAB -->
+      <div id="tab-content-daily-entry" class="tab-content">
+        <div class="flex justify-between items-center mb-4">
+          <div class="flex items-center gap-2">
+            <input type="text" id="entry-date" onchange="app.loadDate()" placeholder="Select Date">
+            <span id="day-status-badge"></span>
+            <button id="btn-unlock-day" class="btn btn-outline"
+              style="display:none; padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.unlockDay()">Unlock
+              (Admin)</button>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-outline" style="padding:0.2rem 0.5rem; font-size:0.75rem;" title="Copy to Clipboard"
+              onclick="app.copyDailyStatement()">📋 Copy</button>
+            <button class="btn btn-outline" style="padding:0.2rem 0.5rem; font-size:0.75rem;" title="Excel Report"
+              onclick="app.exportDailyStatementCSV()">📊 Excel</button>
+            <button class="btn btn-outline" style="padding:0.2rem 0.5rem; font-size:0.75rem;" title="PDF Report"
+              onclick="app.exportDailyStatementPDF()">📄 PDF</button>
+            <button class="btn btn-primary" id="btn-save-draft" onclick="app.saveDraft()">Save Draft</button>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card" style="background: var(--bg);">
+            <label>Opening Balance</label>
+            <input type="number" id="opening-balance"
+              style="font-size: 1.5rem; font-weight: bold; background: var(--surface);" onchange="app.updateClosing()">
+          </div>
+          <div class="card" style="background: var(--primary); color: white;">
+            <label style="color: rgba(255,255,255,0.8);">Expected Closing Balance</label>
+            <div id="closing-balance" style="font-size: 1.5rem; font-weight: bold;">0</div>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <!-- Receipts (was Deposits) -->
+          <div class="card">
+            <h3 class="subtitle text-success mb-4">Receipts</h3>
+            <div class="flex gap-2 mb-4" id="deposit-form">
+              <select id="dep-mode" style="width: 90px;">
+                <option>Cash</option>
+                <option>UPI</option>
+                <option>Bank</option>
+              </select>
+              <input type="text" id="dep-source" placeholder="Source/From" style="flex-grow: 1;">
+              <input type="number" id="dep-amount" placeholder="Amount" style="width: 120px;">
+              <button class="btn btn-primary" onclick="app.addTransaction('Deposit')">+</button>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mode</th>
+                    <th>Source</th>
+                    <th>Amount</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="deposits-list"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Payments (was Expenses) -->
+          <div class="card">
+            <div class="flex items-center mb-4">
+              <h3 class="subtitle text-danger mb-0">Payments</h3>
+              <button class="btn btn-outline" style="padding:0.2rem 0.5rem; font-size:0.75rem; margin-left:auto;"
+                onclick="app.copyExpenses()">📋 Copy</button>
+            </div>
+            <div class="flex gap-2 mb-2" id="expense-form">
+              <select id="exp-mode" style="width: 90px;">
+                <option>Cash</option>
+                <option>UPI</option>
+                <option>Bank</option>
+              </select>
+              <input type="text" id="exp-name" placeholder="Name/Vendor" style="width: 150px;">
+              <input type="text" id="exp-details" placeholder="Details" style="flex-grow: 1;">
+              <input type="number" id="exp-amount" placeholder="Amount" style="width: 120px;">
+              <button class="btn btn-danger" onclick="app.addTransaction('Expense')">+</button>
+            </div>
+            <p style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 1rem;">(Ex: Petrol | Details: HP Bunk
+              | Amount: 500)</p>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mode</th>
+                    <th>Name</th>
+                    <th>Details</th>
+                    <th>Amount</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="expenses-list"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BANK ENTRY TAB -->
+      <div id="tab-content-bank-entry" class="tab-content" style="display: none;">
+        <div class="flex justify-between items-center mb-4">
+          <div class="flex items-center gap-2">
+            <input type="text" id="bank-date" onchange="app.loadDate()" placeholder="Select Date">
+            <span id="bank-day-status-badge"></span>
+            <button id="btn-bank-unlock-day" class="btn btn-outline"
+              style="display:none; padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.unlockDay()">Unlock
+              (Admin)</button>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-outline" style="padding:0.2rem 0.5rem; font-size:0.75rem;" title="Copy to Clipboard"
+              onclick="app.copyBankStatement()">📋 Copy</button>
+            <button class="btn btn-outline" style="padding:0.2rem 0.5rem; font-size:0.75rem;" title="Excel Report"
+              onclick="app.exportBankStatementCSV()">📊 Excel</button>
+            <button class="btn btn-outline" style="padding:0.2rem 0.5rem; font-size:0.75rem;" title="PDF Report"
+              onclick="app.exportBankStatementPDF()">📄 PDF</button>
+            <button class="btn btn-primary" id="btn-bank-save-draft" onclick="app.saveDraft()">Save Draft</button>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card" style="background: var(--bg);">
+            <label>Bank Opening Balance</label>
+            <input type="number" id="bank-opening-balance"
+              style="font-size: 1.5rem; font-weight: bold; background: var(--surface);"
+              onchange="app.updateBankClosing()">
+          </div>
+          <div class="card" style="background: var(--secondary); color: white;">
+            <label style="color: rgba(255,255,255,0.8);">Expected Bank Closing Balance</label>
+            <div id="bank-closing-balance" style="font-size: 1.5rem; font-weight: bold;">0</div>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <!-- Bank Receipts -->
+          <div class="card">
+            <h3 class="subtitle text-success mb-4">Bank Receipts (In)</h3>
+            <div class="flex gap-2 mb-4" id="bank-receipt-form">
+              <select id="bank-cred-mode" style="width: 90px;">
+                <option>Cash</option>
+                <option>UPI</option>
+                <option>Bank</option>
+              </select>
+              <input type="text" id="bank-cred-ref" placeholder="Ref" style="width: 80px;">
+              <input type="text" id="bank-cred-desc" placeholder="Details" style="flex-grow: 1;">
+              <input type="number" id="bank-cred-amount" placeholder="Amount" style="width: 120px;">
+              <button class="btn btn-primary" onclick="app.addBankTransaction('Credit')">+</button>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mode</th>
+                    <th>Ref</th>
+                    <th>Source</th>
+                    <th>Amount</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="bank-credits-list"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bank Payments -->
+          <div class="card">
+            <h3 class="subtitle text-danger mb-4">Bank Payments (Out)</h3>
+            <div class="flex gap-2 mb-4" id="bank-payment-form">
+              <select id="bank-deb-mode" style="width: 90px;">
+                <option>Cash</option>
+                <option>UPI</option>
+                <option>Bank</option>
+              </select>
+              <input type="text" id="bank-deb-ref" placeholder="Ref" style="width: 80px;">
+              <input type="text" id="bank-deb-desc" placeholder="Details" style="flex-grow: 1;">
+              <input type="number" id="bank-deb-amount" placeholder="Amount" style="width: 120px;">
+              <button class="btn btn-danger" onclick="app.addBankTransaction('Debit')">+</button>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mode</th>
+                    <th>Ref</th>
+                    <th>Details</th>
+                    <th>Amount</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="bank-debits-list"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CASH COUNT TAB -->
+      <div id="tab-content-cash-count" class="tab-content" style="display: none;">
+        <div class="card">
+          <h3 class="subtitle mb-4">Physical Cash Verification</h3>
+          <div class="grid grid-2 mb-4">
+            <div class="card" style="padding: 1rem; border-color: var(--primary);">
+              <div>System Cash Expected</div>
+              <h2 id="denom-expected">0</h2>
+            </div>
+            <div class="card" style="padding: 1rem; border-color: var(--warning);" id="denom-variance-card">
+              <div>Physical Count</div>
+              <h2 id="denom-actual">0</h2>
+              <div id="denom-variance" style="font-size: 0.85rem; font-weight: bold; margin-top: 0.25rem;"></div>
+            </div>
+          </div>
+
+          <div class="table-responsive mb-4">
+            <table>
+              <thead>
+                <tr>
+                  <th>Note</th>
+                  <th>Count</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody id="denom-table"></tbody>
+            </table>
+          </div>
+
+          <div class="form-group" id="remarks-group" style="display:none;">
+            <label class="text-warning">Remarks for Variance (Mandatory)</label>
+            <textarea id="denom-remarks"></textarea>
+          </div>
+
+          <button class="btn btn-primary" id="btn-verify-day" style="width: 100%;" onclick="app.verifyDay()">Verify &
+            Lock Day</button>
+          <button class="btn btn-outline" id="btn-print-slip" style="width: 100%; margin-top: 0.5rem; display:none;"
+            onclick="app.printShiftSlip()">Print Handover Slip (Thermal Desktop)</button>
+        </div>
+      </div>
+
+      <!-- REPORTS TAB -->
+      <div id="tab-content-reports" class="tab-content" style="display: none;">
+
+        <!-- REPORTS HEADER BANNER -->
+        <div style="background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%); border-radius: 20px; padding: 1.75rem; margin-bottom: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+          
+          <!-- Top Row: Title and Actions -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+              <h2 style="color: #fff; margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;">📊 Financial Reports</h2>
+              <p id="report-mode-indicator" style="color: rgba(255,255,255,0.8); margin: 0.25rem 0 0 0; font-size: 0.85rem; font-weight: 500;"></p>
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem;">
+              <button onclick="app.copyFullReport()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 0.6rem 1.2rem; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">📋 Copy</button>
+              <button onclick="app.exportFullReportCSV()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 0.6rem 1.2rem; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">📊 Excel</button>
+              <button onclick="app.exportFullReportPDF()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 0.6rem 1.2rem; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">📄 PDF</button>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Filter Pill Bar (Placed below buttons) -->
+          <div style="display: inline-flex; align-items: center; background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 0.25rem; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+            <!-- FROM -->
+            <div style="display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1rem; border-right: 1px solid rgba(255,255,255,0.1);">
+              <span style="color: rgba(255,255,255,0.5); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;">From</span>
+              <input type="text" id="report-from" onchange="app.loadReports()" placeholder="Start Date"
+                style="background: transparent; border: none; outline: none; color: #fff; font-size: 0.95rem; font-weight: 700; width: 170px; cursor: pointer;">
+            </div>
+            
+            <div style="padding: 0 0.75rem; color: rgba(255,255,255,0.25); font-weight: 300; font-size: 1.2rem;">→</div>
+
+            <!-- TO -->
+            <div style="display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1rem; border-right: 1px solid rgba(255,255,255,0.1);">
+              <span style="color: rgba(255,255,255,0.5); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;">To</span>
+              <input type="text" id="report-to" onchange="app.loadReports()" placeholder="End Date"
+                style="background: transparent; border: none; outline: none; color: #fff; font-size: 0.95rem; font-weight: 700; width: 170px; cursor: pointer;">
+            </div>
+
+            <!-- TYPE SELECTOR -->
+            <div style="padding: 0.25rem;">
+              <select id="report-type" onchange="app.loadReports()"
+                style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.6rem 1rem; border-radius: 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer; outline: none; min-width: 160px;">
+                <option value="cash" style="background: #4f46e5; color: #fff;">💵 Cash Reports</option>
+                <option value="bank" style="background: #4f46e5; color: #fff;">🏦 Bank Reports</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHART -->
+        <div class="card" style="margin-bottom:1.25rem; display:flex; justify-content:center; align-items:center; min-height:280px; padding:1.5rem;">
+          <canvas id="reportsChart" style="max-height:260px; width:100% !important;"></canvas>
+        </div>
+
+        <!-- TABLE -->
+        <div class="card" style="padding:0; overflow:hidden;">
+          <div style="padding:0.85rem 1.25rem; border-bottom:1px solid var(--border);">
+            <h3 class="title" style="margin:0; font-size:0.95rem;">📋 Period Breakdown</h3>
+          </div>
+          <div class="table-responsive">
+            <table style="width:100%">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Opening</th>
+                  <th>Receipts</th>
+                  <th>Payments</th>
+                  <th>Closing</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="reports-list"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HELP MODAL -->
+  <div id="help-modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; backdrop-filter: blur(4px);">
+    <div class="card" style="max-width:600px; margin: 5rem auto; max-height:80vh; overflow-y:auto;">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="title">Quick Help Guide</h2>
+        <button class="btn btn-outline" onclick="app.toggleHelp()">✕</button>
+      </div>
+      <div style="font-size:0.95rem; line-height:1.7;">
+        <h3 class="subtitle mb-2">🚀 Getting Started</h3>
+        <p class="mb-4">Use the tabs to navigate between Daily Entry, Bank Entry, and Cash Count. Ensure you select the
+          correct <b>Date</b> before entering data.</p>
+
+        <h3 class="subtitle mb-2">🔒 Verification & Locking</h3>
+        <p class="mb-4">Once you finish counting physical cash in the <b>Cash Count</b> tab, click "Verify & Lock". This
+          locks the day to prevent accidental changes. Admins can unlock records if needed.</p>
+
+        <h3 class="subtitle mb-2">📊 Reports & Exports</h3>
+        <p class="mb-4">Go to the <b>Reports</b> tab (Admin only) to view history and charts. You can export data to
+          Excel, PDF, or copy a WhatsApp-ready summary to your clipboard.</p>
+
+        <h3 class="subtitle mb-2">☁️ Cloud Sync</h3>
+        <p class="mb-4">If the status says "Cloud", your data is syncing with Google Sheets. If "Local", it's stored in
+          your browser only.</p>
+      </div>
+      <button class="btn btn-primary mt-4" style="width:100%" onclick="app.toggleHelp()">Got it!</button>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * DAILY CASHBOOK - ADVANCED LOGIC
+     * Includes Green Calendar Marks, Responsive Adjustments, and SheetJS Exports.
+     */
+
+    const CONFIG = {
+      // ⚡ PASTE YOUR GOOGLE APPS SCRIPT URL HERE (Inside the quotes)
+      _URL: '', // Set via Admin Dashboard or the Quick Setup on the login page
+
+      get APPS_SCRIPT_URL() {
+        if (localStorage.getItem('APPS_SCRIPT_OVERRIDE_OFFLINE') === 'true') return '';
+        return localStorage.getItem('APPS_SCRIPT_URL') || this._URL;
+      },
+      set APPS_SCRIPT_URL(val) { localStorage.setItem('APPS_SCRIPT_URL', val); },
+      DENOMINATIONS: [500, 200, 100, 50, 20, 10, 5, 2, 1]
+    };
+
+    const api = {
+      // Helper to ensure dates are always YYYY-MM-DD strings for comparison
+      normalizeDate(d) {
+        if (!d) return "";
+        if (d instanceof Date) {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const r = String(d.getDate()).padStart(2, '0');
+          return `${y}-${m}-${r}`;
+        }
+        let s = String(d).split('T')[0].split(' ')[0].trim();
+
+        // YYYY-MM-DD
+        let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+        if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+
+        // DD-MM-YYYY or DD/MM/YYYY
+        m = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+        if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+
+        return s;
+      },
+
+      async req(action, payload = null, date = null) {
+        const url = CONFIG.APPS_SCRIPT_URL;
+        if (url) {
+          try {
+            const res = await fetch(url, {
+              method: "POST",
+              body: JSON.stringify({ action, payload, date }),
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+            });
+            if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+            const text = await res.text();
+            try { return JSON.parse(text); }
+            catch (e) { throw new Error(`Invalid JSON: ${text.substring(0, 100)}`); }
+          } catch (fetchErr) {
+            // Show a non-blocking warning badge, fall back to local storage
+            const badge = document.getElementById('sync-status-nav');
+            if (badge) { badge.innerText = '⚠️ Offline'; badge.className = 'badge'; badge.style.display = 'inline-flex'; }
+            console.warn('Cloud request failed, using local storage:', fetchErr.message);
+            return this.mockDb(action, payload, date);
+          }
+        } else {
+          return this.mockDb(action, payload, date);
+        }
+      },
+
+      mockDb(action, p, date) {
+        const get = (k) => JSON.parse(localStorage.getItem(k) || '[]');
+        const set = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+        let users = get('Users');
+        if (users.length === 0) {
+          // Minimal fallback for local storage mode ONLY
+          if (!CONFIG.APPS_SCRIPT_URL) {
+            users = [{ Username: 'admin', Password: '123', Role: 'Admin' }];
+            set('Users', users);
+          }
+        }
+
+        if (action === 'getUsers') return users;
+        if (action === 'addUser') { users.push(p); set('Users', users); return { status: 'success' }; }
+        if (action === 'editUser') {
+          let idx = users.findIndex(u => u.Username === p.Username);
+          if (idx > -1) users[idx] = p;
+          set('Users', users); return { status: 'success' };
+        }
+        if (action === 'deleteUser') { set('Users', users.filter(u => u.Username !== p.Username)); return { status: 'success' }; }
+        if (action === 'getSummary') return get('Summary');
+        if (action === 'loadDayData') {
+          let summaries = get('Summary');
+          let txs = get('Transactions').filter(t => t.Date === date);
+          let denoms = get('Denominations').filter(t => t.Date === date);
+          let bankTxs = get('Bank_Transactions').filter(t => t.Date === date);
+          return { summaries, txs, denoms, bankTxs };
+        }
+        if (action === 'saveSummary') {
+          let sum = get('Summary');
+          let idx = sum.findIndex(s => s.Date === p.Date);
+          if (idx > -1) sum[idx] = Object.assign(sum[idx], p); else sum.push(p);
+          set('Summary', sum); return { status: 'success' };
+        }
+        if (action === 'getBankTransactions') return get('Bank_Transactions').filter(t => t.Date === date);
+        if (action === 'saveBankTransaction') {
+          let bt = get('Bank_Transactions'); bt.push(p);
+          set('Bank_Transactions', bt); return { status: 'success' };
+        }
+        if (action === 'deleteBankTransaction') {
+          let bt = get('Bank_Transactions'); set('Bank_Transactions', bt.filter(t => t.ID !== p.ID)); return { status: 'success' };
+        }
+        if (action === 'getTransactions') return get('Transactions');
+        if (action === 'saveTransaction') {
+          let tx = get('Transactions'); tx.push(p);
+          set('Transactions', tx); return { status: 'success' };
+        }
+        if (action === 'deleteTransaction') {
+          let tx = get('Transactions'); set('Transactions', tx.filter(t => t.ID !== p.ID)); return { status: 'success' };
+        }
+        if (action === 'getDenominations') return get('Denominations');
+        if (action === 'saveDenominations') {
+          let d = get('Denominations').filter(x => x.Date !== date);
+          set('Denominations', [...d, ...p]); return { status: 'success' };
+        }
+      }
+    };
+
+    const app = {
+      user: null,
+      currentDate: (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`; })(),
+      dayData: { summary: null, txs: [], denomsList: [], bankTxs: [] },
+      chartInstance: null,
+      fpInstances: [],
+
+      async init() {
+        const t = localStorage.getItem('cashbook_theme');
+        if (t) { document.documentElement.setAttribute('data-theme', t); this.renderThemeBtn(t); }
+
+        // Check auto-login
+        const savedRole = sessionStorage.getItem('cashbook_role');
+        const savedUser = sessionStorage.getItem('cashbook_user');
+        if (savedRole) {
+          this.user = { Username: savedUser, Role: savedRole };
+          this.goToAppView();
+        }
+
+        await this.initCalendar();
+        this.checkConfigState();
+      },
+
+      switchView(id) {
+        document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
+        const el = document.getElementById(id);
+        if (el) el.classList.add('active');
+      },
+
+      async initCalendar() {
+        const summaries = await api.req('getSummary') || [];
+        const datesWithData = Array.isArray(summaries) ? summaries.map(s => s.Date) : [];
+
+        const config = {
+          dateFormat: "Y-m-d",
+          altInput: true,
+          altFormat: "F j, Y",
+          onDayCreate: (dObj, dStr, fp, dayElem) => {
+            const date = api.normalizeDate(dayElem.dateObj);
+            if (datesWithData.includes(date)) {
+              dayElem.classList.add("has-transaction");
+            }
+          },
+          onChange: (selectedDates, dateStr) => {
+            if (dateStr) {
+              app.currentDate = dateStr;
+              // Synchronize pickers
+              this.fpInstances.forEach(fp => {
+                if (fp.element.id === 'entry-date' || fp.element.id === 'bank-date') {
+                  if (fp.currentSelectedDateStr !== dateStr) fp.setDate(dateStr, false);
+                }
+              });
+              app.loadDate();
+            }
+          }
+        };
+
+        // Close existing
+        this.fpInstances.forEach(i => i.destroy());
+        this.fpInstances = [];
+
+        // Init new ones
+        ['entry-date', 'bank-date', 'report-from', 'report-to'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            this.fpInstances.push(flatpickr(el, {
+              ...config,
+              defaultDate: id.includes('report') ? this.currentDate : app.currentDate
+            }));
+          }
+        });
+      },
+
+      route() {
+        if (!this.user) {
+          this.switchView('view-login');
+        } else {
+          this.goToAppView();
+        }
+      },
+
+      togglePassword(id, el) {
+        const inp = document.getElementById(id);
+        const isPass = inp.type === "password";
+        inp.type = isPass ? "text" : "password";
+        el.innerText = isPass ? "🔒" : "👁️";
+      },
+
+      toggleTheme() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const newTheme = isDark ? 'light' : 'dark';
+        if (newTheme === 'light') document.documentElement.removeAttribute('data-theme');
+        else document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('cashbook_theme', newTheme);
+        this.renderThemeBtn(newTheme);
+      },
+
+      renderThemeBtn(theme) {
+        const btn = document.getElementById('theme-btn');
+        if (!btn) return;
+        btn.innerHTML = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+        btn.className = `btn ${theme === 'dark' ? 'btn-warning' : 'btn-outline'}`;
+      },
+
+      async goToAppView() {
+        this.switchView('view-app');
+        document.getElementById('current-user-display-name').innerText = this.user.Username;
+        document.getElementById('current-user-display-role').innerText = this.user.Role;
+        document.getElementById('nav-btn-admin').style.display = this.user.Role === 'Admin' ? 'inline-flex' : 'none';
+        document.getElementById('tab-reports').style.display = this.user.Role === 'Admin' ? 'block' : 'none';
+
+        // Find the most recent date with data; fall back to today
+        try {
+          const summaries = await api.req('getSummary') || [];
+          const txs = await api.req('getTransactions') || [];
+          // Collect all unique dates from both summaries and transactions
+          const allDates = [
+            ...summaries.map(s => api.normalizeDate(s.Date)),
+            ...txs.map(t => api.normalizeDate(t.Date))
+          ].filter(d => d && d.length === 10).sort().reverse();
+
+          if (allDates.length > 0) {
+            this.currentDate = allDates[0]; // Most recent date
+          }
+        } catch (e) { /* Keep today if fetch fails */ }
+
+        this.switchTab('daily-entry');
+        // Sync date pickers to currentDate
+        this.fpInstances.forEach(fp => {
+          if (fp.element && (fp.element.id === 'entry-date' || fp.element.id === 'bank-date')) {
+            fp.setDate(this.currentDate, false);
+          }
+        });
+        this.loadDate();
+      },
+
+      goToAdminView() {
+        this.switchView('view-admin');
+        this.loadAdmin();
+      },
+
+      async login() {
+        const uInput = document.getElementById('login-username').value.trim();
+        const pInput = document.getElementById('login-password').value.trim();
+        const err = document.getElementById('login-error');
+        err.style.display = 'none';
+
+        // ✅ MASTER BYPASS: admin/123 always works, no cloud needed
+        if (uInput.toLowerCase() === 'admin' && pInput === '123') {
+          this.user = { Username: 'admin', Role: 'Admin', Password: '123' };
+          this.finishLogin();
+          return;
+        }
+
+        try {
+          let users = await api.req('getUsers') || [];
+
+          if (users.length === 0) {
+            err.innerText = 'No users found. Use admin / 123 to login.';
+            err.style.display = 'block';
+            return;
+          }
+
+          const found = users.find(x =>
+            x.Username && x.Username.toLowerCase() === uInput.toLowerCase() &&
+            String(x.Password) === String(pInput)
+          );
+
+          if (found) {
+            this.user = found;
+            this.finishLogin();
+          } else {
+            err.innerText = 'Invalid username or password.';
+            err.style.display = 'block';
+          }
+        } catch (error) {
+          err.innerText = 'Cloud error: ' + error.message + '. Use admin / 123 to login offline.';
+          err.style.display = 'block';
+        }
+      },
+
+      quickSetupUrl() {
+        const url = document.getElementById('setup-url-input').value.trim();
+        const msg = document.getElementById('setup-url-msg');
+        if (!url.startsWith('https://script.google.com/')) {
+          msg.innerText = '❌ Invalid URL. Must start with https://script.google.com/';
+          msg.style.color = 'var(--danger)';
+          return;
+        }
+        localStorage.setItem('APPS_SCRIPT_URL', url);
+        localStorage.removeItem('APPS_SCRIPT_OVERRIDE_OFFLINE');
+        msg.innerText = '✅ URL saved! Now login with admin / 123';
+        msg.style.color = 'var(--secondary)';
+      },
+
+      finishLogin() {
+        sessionStorage.setItem('cashbook_role', this.user.Role);
+        sessionStorage.setItem('cashbook_user', this.user.Username);
+        document.getElementById('login-error').style.display = 'none';
+        
+        // Trigger Celebration
+        this.triggerCelebration();
+        
+        setTimeout(() => {
+          this.goToAppView();
+          this.initCalendar();
+        }, 1500);
+      },
+
+      triggerCelebration() {
+        for (let i = 0; i < 100; i++) {
+          const c = document.createElement('div');
+          c.className = 'confetti';
+          c.style.left = Math.random() * 100 + 'vw';
+          c.style.backgroundColor = ['#6366f1', '#10b981', '#ef4444', '#f59e0b'][Math.floor(Math.random() * 4)];
+          c.style.width = Math.random() * 10 + 5 + 'px';
+          c.style.height = c.style.width;
+          c.style.animationDuration = Math.random() * 2 + 2 + 's';
+          c.style.opacity = Math.random();
+          document.body.appendChild(c);
+          setTimeout(() => c.remove(), 3000);
+        }
+      },
+
+      logout() {
+        this.user = null;
+        sessionStorage.clear();
+        this.route();
+      },
+
+      switchTab(tab) {
+        document.querySelectorAll('.nav-tab').forEach(e => e.classList.remove('active'));
+        const tabEl = document.getElementById('tab-' + tab);
+        if (tabEl) tabEl.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(e => e.style.display = 'none');
+        document.getElementById('tab-content-' + tab).style.display = 'block';
+
+        if (tab === 'daily-entry' || tab === 'bank-entry') this.loadDate();
+        if (tab === 'cash-count') this.renderDenominations();
+        if (tab === 'reports') this.loadReports();
+      },
+
+      async loadAdmin() {
+        this.checkConfigState();
+        this.usersCache = await api.req('getUsers') || [];
+        const tbody = document.getElementById('admin-users-list');
+        if (!tbody) return;
+
+        // Populate user filter dropdown in audit log
+        const auditFilter = document.getElementById('audit-user-filter');
+        if (auditFilter) {
+          const currentVal = auditFilter.value;
+          auditFilter.innerHTML = '<option value="">All Users</option>';
+          this.usersCache.forEach(u => {
+            auditFilter.innerHTML += `<option value="${u.Username}" ${currentVal === u.Username ? 'selected' : ''}>${u.Username} (${u.Role})</option>`;
+          });
+        }
+
+        tbody.innerHTML = this.usersCache.map(u => `
+          <tr>
+            <td><b>${u.Username || 'N/A'}</b></td>
+            <td><span class="badge ${u.Role === 'Admin' ? 'badge-danger' : 'badge-success'}">${u.Role || 'User'}</span></td>
+            <td style="text-align:right">
+              <button class="btn btn-warning" style="padding:0.2rem 0.5rem; font-size:0.75rem;" onclick="app.editUser('${u.Username}')">Edit</button>
+              ${(u.Username && u.Username.toLowerCase() !== 'admin') ? `<button class="btn btn-outline" style="padding:0.2rem 0.5rem; font-size:0.75rem;" onclick="app.deleteUser('${u.Username}')">Delete</button>` : ''}
+            </td>
+          </tr>
+        `).join('');
+      },
+
+  async loadAuditLog() {
+    const tbody = document.getElementById('audit-log-list');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+
+    const txs = await api.req('getTransactions') || [];
+    const userFilter = document.getElementById('audit-user-filter')?.value || '';
+    const typeFilter = document.getElementById('audit-type-filter')?.value || '';
+
+    // Populate user dropdown from transaction data
+    const auditFilter = document.getElementById('audit-user-filter');
+    if (auditFilter && auditFilter.options.length <= 1) {
+      const users = [...new Set(txs.map(t => t.Entered_by).filter(Boolean))];
+      users.forEach(u => {
+        auditFilter.innerHTML += `<option value="${u}">${u}</option>`;
+      });
+    }
+
+    let filtered = txs
+      .filter(t => !userFilter || t.Entered_by === userFilter)
+      .filter(t => !typeFilter || t.Type === typeFilter)
+      .sort((a, b) => String(b.ID) > String(a.ID) ? 1 : -1);
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No transactions found</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(t => {
+      const isDeposit = t.Type === 'Deposit';
+      const typeClass = isDeposit ? 'badge-success' : 'badge-danger';
+      const typeLabel = isDeposit ? '⬆ Receipt' : '⬇ Payment';
+      return `<tr>
+        <td><b>${t.Date}</b></td>
+        <td><span class="badge ${typeClass}">${typeLabel}</span></td>
+        <td>${t.Category || '-'}</td>
+        <td style="font-size:0.85rem;">${t.Description || '-'}</td>
+        <td style="font-weight:700; color:${isDeposit ? 'var(--secondary)' : 'var(--danger)'}">${isDeposit ? '+' : '-'}₹${Number(t.Amount).toLocaleString()}</td>
+        <td><span class="badge" style="background:rgba(99,102,241,0.15);color:var(--primary);">${t.Entered_by || 'Unknown'}</span></td>
+      </tr>`;
+    }).join('');
+  },
+
+      async createUser() {
+        const u = document.getElementById('new-username').value;
+        const p = document.getElementById('new-password').value;
+        const r = document.getElementById('new-role').value;
+        if (!u || !p) return alert('Fill fields');
+        await api.req('addUser', { Username: u, Password: p, Role: r });
+        document.getElementById('new-username').value = '';
+        document.getElementById('new-password').value = '';
+        this.loadAdmin();
+      },
+
+      editUser(username) {
+        const user = this.usersCache.find(u => u.Username === username);
+        if (!user) return;
+        document.getElementById('new-username').value = user.Username;
+        document.getElementById('new-password').value = user.Password;
+        document.getElementById('new-role').value = user.Role;
+        document.getElementById('btn-create-user').style.display = 'none';
+        document.getElementById('btn-update-user').style.display = 'inline-flex';
+      },
+
+      async updateUser() {
+        const u = document.getElementById('new-username').value;
+        const p = document.getElementById('new-password').value;
+        const r = document.getElementById('new-role').value;
+        if (!u || !p) return alert('Fill fields');
+        await api.req('editUser', { Username: u, Password: p, Role: r });
+        document.getElementById('new-username').value = '';
+        document.getElementById('new-password').value = '';
+        document.getElementById('btn-create-user').style.display = 'inline-flex';
+        document.getElementById('btn-update-user').style.display = 'none';
+        this.loadAdmin();
+      },
+
+      async deleteUser(username) {
+        if (username === 'admin') return alert('Cannot delete master admin');
+        if (!confirm(`Are you sure you want to delete user "${username}"?`)) return;
+        await api.req('deleteUser', { Username: username });
+        this.loadAdmin();
+      },
+
+      checkConfigState() {
+        const url = CONFIG.APPS_SCRIPT_URL;
+        const inp = document.getElementById('config-apps-url');
+        const msg = document.getElementById('config-status-msg');
+        const navStatus = document.getElementById('sync-status-nav');
+
+        if (url) {
+          if (inp) inp.value = url;
+          if (msg) {
+            msg.innerHTML = `🟢 <b>Connected:</b> Using Cloud Database`;
+            msg.className = "text-success";
+          }
+          if (navStatus) {
+            navStatus.innerText = "☁️ Cloud";
+            navStatus.className = "badge badge-success";
+            navStatus.style.display = "inline-flex";
+          }
+        } else {
+          if (msg) {
+            msg.innerHTML = `⚪ <b>Offline Mode:</b> Data stored in browser only.`;
+            msg.className = "text-muted";
+          }
+          if (navStatus) {
+            navStatus.innerText = "💾 Local";
+            navStatus.className = "badge";
+            navStatus.style.display = "inline-flex";
+          }
+        }
+        // Also update the report header if it exists
+        const rHeader = document.getElementById('report-mode-indicator');
+        if (rHeader) {
+          rHeader.innerText = url ? "(Cloud Mode)" : "(Local Mode)";
+          rHeader.className = url ? "text-success" : "text-muted";
+        }
+      },
+
+      async saveAppsScriptUrl() {
+        const url = document.getElementById('config-apps-url').value.trim();
+        if (!url.startsWith('https://script.google.com/')) return alert('Invalid URL');
+        CONFIG.APPS_SCRIPT_URL = url;
+        localStorage.removeItem('APPS_SCRIPT_OVERRIDE_OFFLINE');
+        this.checkConfigState();
+        await this.initCalendar();
+      },
+
+      async debugTest() {
+        const out = document.getElementById('debug-output');
+        out.style.display = 'block';
+        out.textContent = 'Running test...\n';
+
+        const url = CONFIG.APPS_SCRIPT_URL;
+        out.textContent += `URL: ${url || '(empty - local mode)'}\n`;
+        out.textContent += `currentDate: ${this.currentDate}\n`;
+        out.textContent += `normalizeDate(currentDate): ${api.normalizeDate(this.currentDate)}\n\n`;
+
+        try {
+          const txs = await api.req('getTransactions');
+          out.textContent += `Total transactions from server: ${txs ? txs.length : 0}\n`;
+          if (txs && txs.length > 0) {
+            out.textContent += `First 5 transaction dates (raw):\n`;
+            txs.slice(0, 5).forEach((t, i) => {
+              const normalized = api.normalizeDate(t.Date);
+              out.textContent += `  [${i + 1}] raw="${t.Date}" normalized="${normalized}" matches=${normalized === api.normalizeDate(this.currentDate)}\n`;
+            });
+          }
+          const summary = await api.req('getSummary');
+          out.textContent += `\nTotal summaries from server: ${summary ? summary.length : 0}\n`;
+          if (summary && summary.length > 0) {
+            out.textContent += `Summary dates: ${summary.map(s => s.Date).join(', ')}\n`;
+          }
+        } catch (e) {
+          out.textContent += `ERROR: ${e.message}\n`;
+        }
+      },
+
+      clearAppsScriptUrl() {
+        const pass = prompt("Enter Admin Password to Disconnect/Unlock URL config:");
+        if (!pass || String(pass) !== String(this.user?.Password || '123')) return alert("Incorrect or empty password!");
+        if (!confirm('This will disconnect the Cloud Sheet. Are you sure?')) return;
+        localStorage.removeItem('APPS_SCRIPT_URL');
+        localStorage.setItem('APPS_SCRIPT_OVERRIDE_OFFLINE', 'true');
+        this.checkConfigState();
+        alert("System unlocked. Mode: Offline");
+      },
+
+      async adminSearch() {
+        const q = document.getElementById('admin-search-query').value.trim();
+        if (!q) return alert("Enter keyword");
+        const resEl = document.getElementById('admin-search-results');
+        resEl.innerHTML = "<p class='text-muted'>Searching...</p>";
+
+        try {
+          const results = await api.req('globalSearch', { query: q });
+          if (!results || results.length === 0) {
+            resEl.innerHTML = "<p class='text-muted'>No results found</p>";
+            return;
+          }
+
+          resEl.innerHTML = `
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Amount</th><th>Source</th></tr></thead>
+            <tbody>
+              ${results.map(r => `
+                <tr>
+                  <td>${r.Date}</td>
+                  <td>${r.Type || '-'}</td>
+                  <td>${r.Description || r.Category}</td>
+                  <td style="font-weight:700">₹${r.Amount.toLocaleString()}</td>
+                  <td><span class="badge badge-success">${r._source}</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+        } catch (e) {
+          resEl.innerHTML = `<p class="text-danger">Search error: ${e.message}</p>`;
+        }
+      },
+
+
+      async loadDate() {
+        if (!this.currentDate || this.currentDate.includes('undefined')) {
+          console.error('Invalid date in loadDate:', this.currentDate);
+          return;
+        }
+        const res = await api.req('loadDayData', null, this.currentDate);
+        const targetDate = api.normalizeDate(this.currentDate);
+
+        // Filter on frontend using local IST time - avoids server timezone bugs
+        this.dayData.summary = (res.summaries || []).find(s => api.normalizeDate(s.Date) === targetDate);
+        this.dayData.txs = (res.txs || []).filter(t => api.normalizeDate(t.Date) === targetDate);
+        this.dayData.denomsList = (res.denoms || []).filter(d => api.normalizeDate(d.Date) === targetDate);
+        this.dayData.bankTxs = (res.bankTxs || []).filter(t => api.normalizeDate(t.Date) === targetDate);
+
+        const obInput = document.getElementById('opening-balance');
+        const bankObInput = document.getElementById('bank-opening-balance');
+
+        if (this.dayData.summary) {
+          obInput.value = this.dayData.summary.Opening_Balance !== undefined ? this.dayData.summary.Opening_Balance : 0;
+          bankObInput.value = this.dayData.summary.Bank_Opening_Balance !== undefined ? this.dayData.summary.Bank_Opening_Balance : 0;
+        } else {
+          const past = (res.summaries || [])
+            .filter(s => api.normalizeDate(s.Date) < targetDate)
+            .sort((a, b) => api.normalizeDate(a.Date) > api.normalizeDate(b.Date) ? -1 : 1);
+          obInput.value = past.length > 0 ? (past[0].Closing_Balance || 0) : 0;
+          bankObInput.value = past.length > 0 ? (past[0].Bank_Closing_Balance || 0) : 0;
+        }
+
+        this.renderTransactions();
+        this.renderBankTransactions();
+        this.applyLocks();
+      },
+
+      renderTransactions() {
+        const txs = this.dayData.txs;
+        const isVerified = !!this.dayData.summary?.Verified;
+        // Use local IST date for today (fixes UTC midnight shift)
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const isAdmin = this.user.Role === 'Admin';
+        const isToday = this.currentDate === today;
+        // Admin: can delete any unverified day. User: can only delete TODAY's entries
+        const canDelete = !isVerified && (isAdmin || isToday);
+
+        const mkRow = (t, isExp) => `<tr>
+      <td>${t.Mode}</td>
+      ${isExp ? `<td>${t.Name || ''}</td>` : ''}
+      <td>${t.Category}</td>
+      <td style="font-weight:700">₹${Number(t.Amount).toLocaleString()}</td>
+      <td style="text-align:right">${canDelete ? `<button class="btn btn-outline" style="padding:0.25rem" onclick="app.delTx('${t.ID}')" title="Delete">✕</button>` : ''}</td>
+    </tr>`;
+        document.getElementById('deposits-list').innerHTML = txs.filter(t => t.Type === 'Deposit').map(t => mkRow(t, false)).join('') || '<tr><td colspan="4" class="text-center">No receipts</td></tr>';
+        document.getElementById('expenses-list').innerHTML = txs.filter(t => t.Type === 'Expense').map(t => mkRow(t, true)).join('') || '<tr><td colspan="5" class="text-center">No payments</td></tr>';
+        this.updateClosing();
+      },
+
+      async addTransaction(type) {
+        if (this.dayData.summary?.Verified) return alert('Locked!');
+        const isDep = type === 'Deposit';
+        const modeEl = document.getElementById(isDep ? 'dep-mode' : 'exp-mode');
+        const nameEl = document.getElementById('exp-name');
+        const catEl = document.getElementById(isDep ? 'dep-source' : 'exp-details');
+        const amtEl = document.getElementById(isDep ? 'dep-amount' : 'exp-amount');
+
+        if (!catEl.value || !amtEl.value) return alert('Fill fields');
+        const now = new Date();
+        const tx = {
+          ID: Date.now().toString(),
+          Date: this.currentDate,
+          Type: type,
+          Mode: modeEl.value,
+          Name: isDep ? '' : nameEl.value,
+          Category: catEl.value,
+          Description: isDep ? catEl.value : (nameEl.value + (catEl.value ? ' - ' + catEl.value : '')),
+          Amount: Number(amtEl.value),
+          Entered_by: this.user.Username,
+          Entry_Date: api.normalizeDate(now),
+          Entry_Time: now.toLocaleTimeString()
+        };
+        this.dayData.txs.push(tx);
+        this.renderTransactions();
+        await api.req('saveTransaction', tx, this.currentDate);
+        catEl.value = '';
+        amtEl.value = '';
+        if (!isDep) nameEl.value = '';
+      },
+
+      async delTx(txID) {
+        if (!confirm('Delete?')) return;
+        this.dayData.txs = this.dayData.txs.filter(t => t.ID !== txID);
+        this.renderTransactions();
+        await api.req('deleteTransaction', { ID: txID, Date: this.currentDate });
+      },
+
+      renderBankTransactions() {
+        const bTxs = this.dayData.bankTxs;
+        const isVerified = !!this.dayData.summary?.Verified;
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const isAdmin = this.user.Role === 'Admin';
+        const isToday = this.currentDate === today;
+        const canDelete = !isVerified && (isAdmin || isToday);
+
+        const mkRow = (t) => `<tr><td>${t.Mode}</td><td><small>${t.Reference || 'N/A'}</small></td><td>${t.Description}</td><td style="font-weight:700">₹${Number(t.Amount).toLocaleString()}</td><td style="text-align:right">${canDelete ? `<button class="btn btn-outline" style="padding:0.25rem" onclick="app.delBankTx('${t.ID}')" title="Delete">✕</button>` : ''}</td></tr>`;
+        document.getElementById('bank-credits-list').innerHTML = bTxs.filter(t => t.Type === 'Credit').map(mkRow).join('') || '<tr><td colspan="5" class="text-center">No receipts</td></tr>';
+        document.getElementById('bank-debits-list').innerHTML = bTxs.filter(t => t.Type === 'Debit').map(mkRow).join('') || '<tr><td colspan="5" class="text-center">No payments</td></tr>';
+        this.updateBankClosing();
+      },
+
+      async addBankTransaction(type) {
+        if (this.dayData.summary?.Verified) return alert('Locked!');
+        const isCred = type === 'Credit';
+        const modeEl = document.getElementById(isCred ? 'bank-cred-mode' : 'bank-deb-mode');
+        const refEl = document.getElementById(isCred ? 'bank-cred-ref' : 'bank-deb-ref');
+        const descEl = document.getElementById(isCred ? 'bank-cred-desc' : 'bank-deb-desc');
+        const amtEl = document.getElementById(isCred ? 'bank-cred-amount' : 'bank-deb-amount');
+
+        if (!descEl.value || !amtEl.value) return alert('Fill fields');
+        const now = new Date();
+        const tx = {
+          ID: Date.now().toString(),
+          Date: this.currentDate,
+          Type: type,
+          Mode: modeEl.value,
+          Reference: refEl.value,
+          Description: descEl.value,
+          Amount: Number(amtEl.value),
+          Entered_by: this.user.Username,
+          Entry_Date: now.toLocaleDateString(),
+          Entry_Time: now.toLocaleTimeString()
+        };
+        this.dayData.bankTxs.push(tx);
+        this.renderBankTransactions();
+        await api.req('saveBankTransaction', tx, this.currentDate);
+        descEl.value = '';
+        amtEl.value = '';
+        refEl.value = '';
+      },
+
+      async delBankTx(txID) {
+        if (!confirm('Delete?')) return;
+        this.dayData.bankTxs = this.dayData.bankTxs.filter(t => t.ID !== txID);
+        this.renderBankTransactions();
+        await api.req('deleteBankTransaction', { ID: txID, Date: this.currentDate });
+      },
+
+      getStats() {
+        let depTotal = 0, expTotal = 0;
+        this.dayData.txs.forEach(t => { if (t.Type === 'Deposit') depTotal += Number(t.Amount); else expTotal += Number(t.Amount); });
+        const ob = Number(document.getElementById('opening-balance').value) || 0;
+        return { ob, depTotal, expTotal, cb: ob + depTotal - expTotal };
+      },
+
+      updateClosing() { const s = this.getStats(); document.getElementById('closing-balance').innerText = `₹${s.cb.toLocaleString()}`; },
+
+      getBankStats() {
+        let credTotal = 0, debTotal = 0;
+        this.dayData.bankTxs.forEach(t => { if (t.Type === 'Credit') credTotal += Number(t.Amount); else debTotal += Number(t.Amount); });
+        const ob = Number(document.getElementById('bank-opening-balance').value) || 0;
+        return { ob, credTotal, debTotal, cb: ob + credTotal - debTotal };
+      },
+
+      updateBankClosing() { const s = this.getBankStats(); document.getElementById('bank-closing-balance').innerText = `₹${s.cb.toLocaleString()}`; },
+
+      applyLocks() {
+        const v = !!this.dayData.summary?.Verified;
+        const isAdmin = this.user.Role === 'Admin';
+
+        document.getElementById('day-status-badge').className = v ? 'badge badge-success' : 'badge';
+        document.getElementById('day-status-badge').innerText = v ? 'Verified & Locked' : 'Draft';
+        document.getElementById('btn-unlock-day').style.display = (v && isAdmin) ? 'inline-flex' : 'none';
+
+        document.getElementById('bank-day-status-badge').className = v ? 'badge badge-success' : 'badge';
+        document.getElementById('bank-day-status-badge').innerText = v ? 'Locked' : 'Draft';
+        document.getElementById('btn-bank-unlock-day').style.display = (v && isAdmin) ? 'inline-flex' : 'none';
+
+        ['opening-balance', 'bank-opening-balance'].forEach(id => {
+          const el = document.getElementById(id); if (el) el.disabled = v;
+        });
+
+        ['deposit-form', 'expense-form', 'bank-receipt-form', 'bank-payment-form', 'btn-save-draft', 'btn-bank-save-draft'].forEach(id => {
+          const el = document.getElementById(id); if (el) el.style.display = v ? 'none' : 'flex';
+        });
+      },
+
+      async unlockDay() {
+        if (!confirm('Unlock this day for editing? (Admin Action)')) return;
+
+        this.dayData.summary.Verified = false;
+        await api.req('saveSummary', this.dayData.summary);
+        this.loadDate();
+        alert('Day Unlocked. You may now add or delete transactions.');
+      },
+
+      async saveDraft() {
+        if (!this.currentDate || this.currentDate.includes('undefined')) return alert("Please select a date first.");
+        const s = this.getStats(); const b = this.getBankStats();
+        await api.req('saveSummary', { Date: this.currentDate, Opening_Balance: s.ob, Total_Deposits: s.depTotal, Total_Expenses: s.expTotal, Closing_Balance: s.cb, Bank_Opening_Balance: b.ob, Bank_Total_Credits: b.credTotal, Bank_Total_Debits: b.debTotal, Bank_Closing_Balance: b.cb, Verified: false });
+        alert('Progress Saved to Cloud!');
+      },
+
+      renderDenominations() {
+        const denoms = this.dayData.denomsList || [];
+        const map = {};
+        if (denoms.length > 0) {
+          const d = denoms[0];
+          CONFIG.DENOMINATIONS.forEach(note => {
+            map[note] = d[note] !== undefined ? d[note] : (d.Denomination == note ? d.Count : 0);
+          });
+        }
+        const v = !!this.dayData.summary?.Verified;
+        document.getElementById('denom-table').innerHTML = CONFIG.DENOMINATIONS.map(d => `<tr><td>₹ ${d}</td><td><input type="number" min="0" data-denom="${d}" class="denom-input" value="${map[d] || ''}" oninput="app.calcDenom()" ${v ? 'disabled' : ''}></td><td id="denom-amt-${d}">₹ 0</td></tr>`).join('');
+        document.getElementById('denom-remarks').value = this.dayData.summary?.Remarks || '';
+        document.getElementById('btn-verify-day').style.display = v ? 'none' : 'block';
+        this.calcDenom();
+      },
+
+      calcDenom() {
+        let total = 0;
+        document.querySelectorAll('.denom-input').forEach(inp => {
+          const d = Number(inp.dataset.denom), c = Number(inp.value) || 0, amt = d * c;
+          total += amt; document.getElementById(`denom-amt-${d}`).innerText = `₹ ${amt.toLocaleString()}`;
+        });
+        document.getElementById('denom-actual').innerText = `₹ ${total.toLocaleString()}`;
+        const s = this.getStats(); document.getElementById('denom-expected').innerText = `₹ ${s.cb.toLocaleString()}`;
+        const varAmount = total - s.cb;
+        const vEl = document.getElementById('denom-variance');
+        vEl.innerText = varAmount === 0 ? "✅ Matches" : (varAmount > 0 ? `⚠️ Excess ₹${varAmount}` : `⚠️ Shortage ₹${Math.abs(varAmount)}`);
+        document.getElementById('remarks-group').style.display = varAmount === 0 ? "none" : "block";
+      },
+
+      async verifyDay() {
+        const s = this.getStats(); const b = this.getBankStats();
+
+        // Format date as DD-MM-YYYY for spreadsheet record
+        const [y, m, d] = this.currentDate.split('-');
+        const formattedDate = `${d}-${m}-${y}`;
+
+        const denomPayload = { Date: formattedDate, TOTAL: 0 };
+        let totalPhy = 0;
+
+        document.querySelectorAll('.denom-input').forEach(inp => {
+          const dn = Number(inp.dataset.denom), c = Number(inp.value) || 0;
+          denomPayload[dn.toString()] = c;
+          denomPayload.TOTAL += (dn * c);
+          totalPhy += (dn * c);
+        });
+
+        const variance = totalPhy - s.cb, rem = document.getElementById('denom-remarks').value;
+        if (variance !== 0 && rem.trim() === '') return alert("Remarks mandatory for variance!");
+
+        await api.req('saveDenominations', denomPayload, this.currentDate);
+        await api.req('saveSummary', { Date: this.currentDate, Opening_Balance: s.ob, Total_Deposits: s.depTotal, Total_Expenses: s.expTotal, Closing_Balance: s.cb, Bank_Opening_Balance: b.ob, Bank_Total_Credits: b.credTotal, Bank_Total_Debits: b.debTotal, Bank_Closing_Balance: b.cb, Verified: true, Variance: variance, Remarks: rem, Counted_By: this.user.Username, Verified_By: this.user.Username });
+        alert("Day Verified & Locked!");
+        await this.initCalendar();
+        this.switchTab('daily-entry');
+      },
+
+      async loadReports() {
+        let summaries = [];
+        try {
+          summaries = await api.req('getSummary') || [];
+        } catch (e) {
+          console.warn("Cloud fetch failed, trying local storage", e);
+          summaries = JSON.parse(localStorage.getItem('Summary') || '[]');
+        }
+        let from = api.normalizeDate(document.getElementById('report-from').value);
+        let to = api.normalizeDate(document.getElementById('report-to').value);
+
+        // If no dates selected, default to last 30 days
+        if (!from || !to) {
+          const today = new Date();
+          const monthAgo = new Date();
+          monthAgo.setDate(today.getDate() - 30);
+          from = api.normalizeDate(monthAgo);
+          to = api.normalizeDate(today);
+        }
+
+        const type = document.getElementById('report-type').value;
+
+        const filtered = summaries.filter(s => {
+          const sDate = api.normalizeDate(s.Date);
+          return sDate >= from && sDate <= to;
+        }).sort((a, b) => api.normalizeDate(a.Date) > api.normalizeDate(b.Date) ? -1 : 1);
+
+        const isBank = type === 'bank';
+        const tbody = document.getElementById('reports-list');
+        tbody.innerHTML = filtered.map(s => {
+          const date = s.Date;
+          const ob = isBank ? (s.Bank_Opening_Balance || 0) : (s.Opening_Balance || 0);
+          const tin = isBank ? (s.Bank_Total_Credits || 0) : (s.Total_Deposits || 0);
+          const tout = isBank ? (s.Bank_Total_Debits || 0) : (s.Total_Expenses || 0);
+          const cb = isBank ? (s.Bank_Closing_Balance || 0) : (s.Closing_Balance || 0);
+          return `<tr><td><b>${date}</b></td><td>₹${ob.toLocaleString()}</td><td class="text-success">₹${tin.toLocaleString()}</td><td class="text-danger">₹${tout.toLocaleString()}</td><td><b>₹${cb.toLocaleString()}</b></td><td>${s.Verified ? '✅' : '⏳'}</td></tr>`;
+        }).join('') || '<tr><td colspan="6" class="text-center">No records in range</td></tr>';
+
+        if (this.chartInstance) this.chartInstance.destroy();
+        if (filtered.length > 0) {
+          const tIn = filtered.reduce((a, b) => a + (Number(isBank ? b.Bank_Total_Credits : b.Total_Deposits) || 0), 0);
+          const tOut = filtered.reduce((a, b) => a + (Number(isBank ? b.Bank_Total_Debits : b.Total_Expenses) || 0), 0);
+          this.chartInstance = new Chart(document.getElementById('reportsChart').getContext('2d'), {
+            type: 'doughnut',
+            data: { labels: ['Receipts', 'Payments'], datasets: [{ data: [tIn, tOut], backgroundColor: ['#10B981', '#EF4444'], borderWidth: 0, hoverOffset: 10 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom' } } }
+          });
+        }
+      },
+
+      async exportFullReportCSV() {
+        this.exportToExcel();
+      },
+
+      async copyFullReport() {
+        const from = document.getElementById('report-from').value, to = document.getElementById('report-to').value, type = document.getElementById('report-type').value;
+        const summaries = await api.req('getSummary') || [];
+        const isBank = type === 'bank';
+        const txsAll = await api.req(isBank ? 'getBankTransactions' : 'getTransactions') || [];
+        const denomsAll = isBank ? [] : (await api.req('getDenominations') || []);
+
+        const filteredSums = summaries.filter(s => {
+          const d = api.normalizeDate(s.Date);
+          return d >= from && d <= to;
+        }).sort((a, b) => api.normalizeDate(a.Date) > api.normalizeDate(b.Date) ? 1 : -1);
+        if (filteredSums.length === 0) return alert("No data in range");
+
+        const startBal = isBank ? filteredSums[0].Bank_Opening_Balance : filteredSums[0].Opening_Balance;
+        const endBal = isBank ? filteredSums[filteredSums.length - 1].Bank_Closing_Balance : filteredSums[filteredSums.length - 1].Closing_Balance;
+        const lastDate = filteredSums[filteredSums.length - 1].Date;
+
+        let text = `*${isBank ? 'BANK' : 'CASHBOOK'} consolidate REPORT - ${from} to ${to}*\n\n`;
+        text += `🔵 *Opening:* ₹${(startBal || 0).toLocaleString()}\n\n`;
+
+        text += `✅ *Receipts:*\n`;
+        let tIn = 0;
+        txsAll.filter(t => {
+          const d = api.normalizeDate(t.Date);
+          return d >= from && d <= to && t.Type === (isBank ? 'Credit' : 'Deposit');
+        }).sort((a, b) => api.normalizeDate(a.Date) > api.normalizeDate(b.Date) ? 1 : -1).forEach(t => {
+          text += `${api.normalizeDate(t.Date)} - ${isBank ? t.Description : t.Category}: ₹${t.Amount.toLocaleString()}\n`;
+          tIn += Number(t.Amount);
+        });
+        text += `Total In: ₹${tIn.toLocaleString()}\n\n`;
+
+        text += `❌ *Payments:*\n`;
+        let tOut = 0;
+        txsAll.filter(t => {
+          const d = api.normalizeDate(t.Date);
+          return d >= from && d <= to && t.Type === (isBank ? 'Debit' : 'Expense');
+        }).sort((a, b) => api.normalizeDate(a.Date) > api.normalizeDate(b.Date) ? 1 : -1).forEach(t => {
+          const desc = isBank ? t.Description : (t.Name + (t.Category ? ' - ' + t.Category : ''));
+          text += `${api.normalizeDate(t.Date)} - ${desc}: ₹${t.Amount.toLocaleString()}\n`;
+          tOut += Number(t.Amount);
+        });
+        text += `Total Out: ₹${tOut.toLocaleString()}\n\n`;
+
+        text += `🟢 *Closing:* ₹${(endBal || 0).toLocaleString()} (Last: ${lastDate})\n`;
+
+        if (!isBank) {
+          text += `\n💵 *DENOMINATIONS (Aggregated):*\n`;
+          const aggr = {};
+          denomsAll.filter(d => {
+            const dISO = api.normalizeDate(d.Date);
+            return dISO >= from && dISO <= to;
+          }).forEach(d => {
+            if (d.Denomination) {
+              aggr[d.Denomination] = (aggr[d.Denomination] || 0) + Number(d.Count);
+            } else {
+              CONFIG.DENOMINATIONS.forEach(note => {
+                // Check both numeric and string keys (Google Sheets returns string keys)
+                const val = Number(d[note] ?? d[String(note)] ?? 0);
+                if (val > 0) aggr[note] = (aggr[note] || 0) + val;
+              });
+            }
+          });
+          CONFIG.DENOMINATIONS.forEach(d => {
+            if (aggr[d]) text += `${d} x ${aggr[d]} = ₹${(d * aggr[d]).toLocaleString()}\n`;
+          });
+        }
+
+        navigator.clipboard.writeText(text).then(() => alert('Consolidated Report Copied!'));
+      },
+
+      async exportFullReportPDF() {
+        const from = document.getElementById('report-from').value, to = document.getElementById('report-to').value;
+        const summaries = await api.req('getSummary') || [];
+        const denomsAll = await api.req('getDenominations') || [];
+        const filtered = summaries.filter(s => {
+          const d = api.normalizeDate(s.Date);
+          return d >= from && d <= to;
+        }).sort((a, b) => api.normalizeDate(a.Date) > api.normalizeDate(b.Date) ? 1 : -1);
+        let html = `<html><head><style>
+      body{font-family:'Outfit',sans-serif;padding:30px;color:#0f172a;}
+      h2{color:#4f46e5;margin-bottom:5px;}
+      table{width:100%;border-collapse:collapse;margin-top:20px;border:1px solid #e2e8f0;}
+      th,td{padding:12px;border:1px solid #e2e8f0;font-size:13px;text-align:left;}
+      th{background:#f1f5f9;font-weight:700;color:#64748b;text-transform:uppercase;font-size:11px;}
+      .opening{color:#4f46e5;font-weight:600;}
+      .closing{background:#f0fdf4;color:#15803d;font-weight:700;}
+      .denom-row{background:#fffbeb;font-style:italic;color:#92400e;border-top:none;}
+      .date-cell{font-weight:700;background:#f8fafc;}
+    </style></head><body><h2>Financial Consolidate Report</h2><p style="color:#64748b;">Period: ${from} to ${to}</p><table><thead><tr><th>Date</th><th>Opening Balance</th><th>Total Receipts</th><th>Total Payments</th><th>Closing Balance</th></tr></thead><tbody>`;
+
+        filtered.forEach(s => {
+          const sDateISO = api.normalizeDate(s.Date);
+          const dEntry = denomsAll.find(d => api.normalizeDate(d.Date) === sDateISO);
+          let dStr = "";
+          if (dEntry) {
+            if (dEntry.Denomination) dStr = dEntry.Denomination + 'x' + dEntry.Count;
+            else {
+              dStr = CONFIG.DENOMINATIONS.filter(n => dEntry[n] > 0).map(n => n + 'x' + dEntry[n]).join(', ');
+            }
+          }
+
+          html += `<tr>
+        <td class="date-cell">${s.Date}</td>
+        <td class="opening">₹${(s.Opening_Balance || 0).toLocaleString()}</td>
+        <td style="color:#059669;">+ ₹${(s.Total_Deposits || 0).toLocaleString()}</td>
+        <td style="color:#dc2626;">- ₹${(s.Total_Expenses || 0).toLocaleString()}</td>
+        <td class="closing">₹${(s.Closing_Balance || 0).toLocaleString()}</td>
+      </tr>`;
+          if (dStr) html += `<tr class="denom-row"><td colspan="5">📦 Denominations: ${dStr}</td></tr>`;
+        });
+        html += `</tbody></table><script>window.onload=()=>window.print();<\/script></body></html>`;
+        window.open('', '_blank').document.write(html);
+      },
+
+      async exportToExcel() {
+        const from = document.getElementById('report-from').value;
+        const to = document.getElementById('report-to').value;
+        const summaries = await api.req('getSummary') || [];
+        const txsAll = await api.req('getTransactions') || [];
+        const denomsAll = await api.req('getDenominations') || [];
+        const filteredSummaries = summaries.filter(s => {
+          const d = api.normalizeDate(s.Date);
+          return d >= from && d <= to;
+        }).sort((a, b) => api.normalizeDate(a.Date) > api.normalizeDate(b.Date) ? 1 : -1);
+
+        const datewiseData = [];
+        filteredSummaries.forEach(s => {
+          const sDateISO = api.normalizeDate(s.Date);
+          datewiseData.push({ Date: s.Date, Type: 'BAL', Description: '🔵 OPENING BALANCE', Amount: s.Opening_Balance });
+
+          txsAll.filter(t => api.normalizeDate(t.Date) === sDateISO).forEach(t => {
+            const desc = t.Description || (t.Name ? t.Name + (t.Category ? ' - ' + t.Category : '') : t.Category);
+            datewiseData.push({ Date: t.Date, Type: t.Type === 'Deposit' ? 'IN' : 'OUT', Description: desc, Amount: t.Amount, Mode: t.Mode });
+          });
+          datewiseData.push({ Date: s.Date, Type: 'BAL', Description: '🟢 CLOSING BALANCE', Amount: s.Closing_Balance });
+
+          const dayDenoms = denomsAll.filter(d => api.normalizeDate(d.Date) === sDateISO);
+          if (dayDenoms.length > 0) {
+            const dStr = dayDenoms.map(d => {
+              if (d.Denomination) return `${d.Denomination}x${d.Count}`;
+              const notes = [500, 200, 100, 50, 20, 10, 5, 2, 1];
+              return notes
+                .map(n => ({ n, v: Number(d[n] ?? d[String(n)] ?? 0) }))
+                .filter(x => x.v > 0)
+                .map(x => `${x.n}x${x.v}`).join(', ');
+            }).join(', ');
+
+            // Calculate actual denomination total value
+            let denomTotal = 0;
+            dayDenoms.forEach(d => {
+              if (d.Denomination && d.Count) {
+                denomTotal += Number(d.Denomination) * Number(d.Count);
+              } else {
+                [500, 200, 100, 50, 20, 10, 5, 2, 1].forEach(n => {
+                  denomTotal += n * Number(d[n] ?? d[String(n)] ?? 0);
+                });
+              }
+            });
+
+            datewiseData.push({ Date: s.Date, Type: 'DENOM', Description: '💵 Denominations: ' + dStr, Amount: denomTotal });
+          }
+          datewiseData.push({});
+        });
+
+        const monthlyData = [];
+        const months = {};
+        filteredSummaries.forEach(s => {
+          const m = s.Date.substring(0, 7);
+          if (!months[m]) months[m] = { Month: m, Opening: s.Opening_Balance, Receipts: 0, Payments: 0, Closing: 0 };
+          months[m].Receipts += (s.Total_Deposits || 0);
+          months[m].Payments += (s.Total_Expenses || 0);
+          months[m].Closing = s.Closing_Balance;
+        });
+        Object.values(months).forEach(m => monthlyData.push(m));
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(datewiseData), "Datewise Ledger");
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(monthlyData), "Monthly Summary");
+        XLSX.writeFile(wb, `Financial_Statement_${from}_to_${to}.xlsx`);
+      },
+
+      // --- Specialized Single-Day Exports ---
+      async exportDayExcel(isBank) {
+        const d = this.currentDate;
+        const s = isBank ? this.getBankStats() : this.getStats();
+        const txs = isBank ? this.dayData.bankTxs : this.dayData.txs;
+
+        // Get denominations
+        let denoms = [];
+        if (!isBank) denoms = this.getCurrentDenoms();
+
+        const data = [];
+        data.push({ "Field": "📊 LEDGER REPORT", "Value": isBank ? "BANK STATEMENT" : "DAILY CASHBOOK" });
+        data.push({ "Field": "📅 Date", "Value": d });
+        data.push({ "Field": "🔵 OPENING BALANCE", "Value": s.ob });
+        data.push({}); // Empty row
+
+        data.push({ "Field": "--- RECEIPTS (IN) ---", "Value": "" });
+        txs.filter(t => t.Type === (isBank ? 'Credit' : 'Deposit')).forEach(t => {
+          const desc = isBank ? (t.Description + ' (Ref: ' + (t.Reference || 'N/A') + ')') : (t.Description || t.Category);
+          data.push({ "Field": desc, "Value": t.Amount });
+        });
+        data.push({ "Field": "✅ Total Receipts", "Value": isBank ? s.credTotal : s.depTotal });
+        data.push({});
+
+        data.push({ "Field": "--- PAYMENTS (OUT) ---", "Value": "" });
+        txs.filter(t => t.Type === (isBank ? 'Debit' : 'Expense')).forEach(t => {
+          const desc = isBank ? (t.Description + ' (Ref: ' + (t.Reference || 'N/A') + ')') : (t.Description || t.Category);
+          data.push({ "Field": desc, "Value": t.Amount });
+        });
+        data.push({ "Field": "❌ Total Payments", "Value": isBank ? s.debTotal : s.expTotal });
+        data.push({});
+
+        data.push({ "Field": "🟢 CLOSING BALANCE", "Value": s.cb });
+
+        if (!isBank && denoms.length > 0) {
+          data.push({});
+          data.push({ "Field": "💵 DENOMINATIONS", "Value": "" });
+          const dRow = denoms[0];
+          CONFIG.DENOMINATIONS.forEach(note => {
+            const count = Number(dRow[note] ?? dRow[String(note)] ?? (dRow.Denomination == note ? dRow.Count : 0));
+            if (count > 0) {
+              data.push({ "Field": "Note ₹" + note + " (" + count + " nos)", "Value": (note * count) });
+            }
+          });
+        }
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Day_Report");
+        XLSX.writeFile(wb, `${isBank ? 'Bank' : 'Cash'}_Report_${d}.xlsx`);
+      },
+
+      async exportDayPDF(isBank) {
+        const d = this.currentDate;
+        const s = isBank ? this.getBankStats() : this.getStats();
+        const txs = isBank ? this.dayData.bankTxs : this.dayData.txs;
+
+        // Get denominations
+        let denoms = [];
+        if (!isBank) denoms = this.getCurrentDenoms();
+
+        const mkTable = (title, list, type) => {
+          let h = `<h3>${title}</h3><table style="width:100%;border-collapse:collapse;margin-bottom:15px;"><thead><tr style="background:#f4f4f4;"><th>Description</th><th style="text-align:right">Amount</th></tr></thead><tbody>`;
+          list.filter(t => t.Type === type).forEach(t => {
+            const desc = isBank ? (t.Description + ' <small>(Ref: ' + (t.Reference || 'N/A') + ')</small>') : (t.Description || t.Category);
+            h += `<tr><td>${desc}</td><td style="text-align:right">₹${t.Amount.toLocaleString()}</td></tr>`;
+          });
+          const tAmt = type === (isBank ? 'Credit' : 'Deposit') ? (isBank ? s.credTotal : s.depTotal) : (isBank ? s.debTotal : s.expTotal);
+          h += `<tr style="font-weight:bold;background:#fafafa;"><td>Total</td><td style="text-align:right">₹${tAmt.toLocaleString()}</td></tr></tbody></table>`;
+          return h;
+        };
+
+        let html = `<html><head><style>
+      body{font-family:'Outfit',sans-serif;padding:40px;color:#0f172a;}
+      .header{border-bottom:2px solid #4f46e5;padding-bottom:10px;margin-bottom:20px;}
+      h1{margin:0;color:#4f46e5;font-size:24px;}
+      .stat-card{display:flex;justify-content:space-between;padding:15px;border-radius:8px;margin-bottom:10px;}
+      .opening-card{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;}
+      .closing-card{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-size:1.2rem;font-weight:700;}
+      table{width:100%;border-collapse:collapse;margin-bottom:20px;}
+      th,td{padding:12px;border-bottom:1px solid #e2e8f0;text-align:left;}
+      th{background:#f8fafc;color:#64748b;font-size:11px;text-transform:uppercase;}
+      .denom-sec{background:#fffbeb;padding:15px;border-radius:8px;border:1px solid #fef3c7;}
+      .denom-sec h3{margin-top:0;color:#92400e;font-size:16px;}
+    </style></head><body>
+      <div class="header">
+        <h1>${isBank ? 'Bank Statement' : 'Cashbook Ledger'}</h1>
+        <p>Date: <b>${d}</b></p>
+      </div>
+      
+      <div class="stat-card opening-card">
+        <span>Opening Balance</span>
+        <b>₹${s.ob.toLocaleString()}</b>
+      </div>
+
+      ${mkTable("Receipts (Inflow)", txs, isBank ? 'Credit' : 'Deposit')}
+      ${mkTable("Payments (Outflow)", txs, isBank ? 'Debit' : 'Expense')}
+      
+      <div class="stat-card closing-card">
+        <span>Final Closing Balance</span>
+        <b>₹${s.cb.toLocaleString()}</b>
+      </div>
+      
+      ${(!isBank && denoms.length > 0) ? `
+        <div class="denom-sec">
+          <h3>Denominations Breakdown</h3>
+          <ul style="list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            ${CONFIG.DENOMINATIONS.map(note => {
+          const dRow = denoms[0];
+          const count = Number(dRow[note] ?? dRow[String(note)] ?? (dRow.Denomination == note ? dRow.Count : 0));
+          return count > 0 ? `<li>₹${note}: <b>${count}</b> notes (₹${(note * count).toLocaleString()})</li>` : '';
+        }).join('')}
+          </ul>
+        </div>
+      ` : ''}
+      
+      <script>window.onload=()=>window.print();<\/script>
+    </body></html>`;
+        window.open('', '_blank').document.write(html);
+      },
+
+      async copyDayText(isBank) {
+        const d = this.currentDate;
+        const s = isBank ? this.getBankStats() : this.getStats();
+        const txs = isBank ? this.dayData.bankTxs : this.dayData.txs;
+        const denoms = isBank ? [] : this.getCurrentDenoms();
+
+        let text = `*${isBank ? 'BANK STATEMENT' : 'CASHBOOK REPORT'} - ${d}*\n\n`;
+        text += `💰 Open: ₹${s.ob.toLocaleString()}\n\n`;
+
+        text += `✅ *Receipts:*\n`;
+        txs.filter(t => t.Type === (isBank ? 'Credit' : 'Deposit')).forEach(t => {
+          text += `- ${isBank ? t.Description : t.Category}: ₹${t.Amount.toLocaleString()}\n`;
+        });
+        text += `Total In: ₹${(isBank ? s.credTotal : s.depTotal).toLocaleString()}\n\n`;
+
+        text += `❌ *Payments:*\n`;
+        txs.filter(t => t.Type === (isBank ? 'Debit' : 'Expense')).forEach(t => {
+          text += `- ${isBank ? t.Description : t.Category}: ₹${t.Amount.toLocaleString()}\n`;
+        });
+        text += `Total Out: ₹${(isBank ? s.debTotal : s.expTotal).toLocaleString()}\n\n`;
+
+        text += `*Closing: ₹${s.cb.toLocaleString()}*\n`;
+
+        if (!isBank && denoms.length > 0) {
+          text += `\n💵 *Denominations:*\n`;
+          const dRow = denoms[0];
+          CONFIG.DENOMINATIONS.forEach(note => {
+            const count = dRow[note] !== undefined ? dRow[note] : (dRow.Denomination == note ? dRow.Count : 0);
+            if (count > 0) {
+              text += `${note} x ${count} = ₹${(note * count).toLocaleString()}\n`;
+            }
+          });
+          if (this.dayData.summary?.Variance) {
+            text += `\n⚠️ Variance: ₹${this.dayData.summary.Variance.toLocaleString()}`;
+            if (this.dayData.summary.Remarks) text += `\n📝 Remarks: ${this.dayData.summary.Remarks}`;
+          }
+        }
+
+        if (this.dayData.summary?.Verified) {
+          text += `\n\n✅ Verified By: ${this.dayData.summary.Verified_By || 'System'}`;
+        }
+
+        navigator.clipboard.writeText(text).then(() => alert('Report Copied to Clipboard!'));
+      },
+
+      async exportDailyStatementCSV() { this.exportDayExcel(false); },
+      async exportDailyStatementPDF() { this.exportDayPDF(false); },
+      async copyDailyStatement() { this.copyDayText(false); },
+      async exportBankStatementCSV() { this.exportDayExcel(true); },
+      async exportBankStatementPDF() { this.exportDayPDF(true); },
+      async copyBankStatement() { this.copyDayText(true); },
+      toggleHelp() {
+        const el = document.getElementById('help-modal');
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      },
+
+      getCurrentDenoms() {
+        const inputs = document.querySelectorAll('.denom-input');
+        if (inputs.length > 0) {
+          let uiRow = { Date: this.currentDate };
+          let hasValue = false;
+          inputs.forEach(inp => {
+            const val = Number(inp.value) || 0;
+            if (val > 0) hasValue = true;
+            uiRow[String(inp.dataset.denom)] = val; // Store as string key
+            uiRow[Number(inp.dataset.denom)] = val; // Also store as number key
+          });
+          if (hasValue) return [uiRow];
+        }
+        // Fall back to server data; ensure both string and number keys exist
+        return (this.dayData.denomsList || []).map(d => {
+          const out = { ...d };
+          CONFIG.DENOMINATIONS.forEach(n => {
+            const v = Number(d[n] ?? d[String(n)] ?? 0);
+            out[n] = v;
+            out[String(n)] = v;
+          });
+          return out;
+        });
+      },
+
+      setTheme(name) {
+        if (name === 'dark') {
+          document.body.setAttribute('data-theme', 'dark');
+        } else {
+          document.body.removeAttribute('data-theme');
+        }
+        localStorage.setItem('cashbook_theme', name);
+        document.querySelectorAll('.theme-preview').forEach(el => el.classList.remove('active'));
+        const active = document.getElementById('theme-' + name);
+        if (active) active.classList.add('active');
+        
+        const label = name === 'dark' ? '☀️ Light' : '🌙 Dark';
+        const btn = document.getElementById('theme-btn');
+        const btnLogin = document.getElementById('theme-btn-login');
+        if (btn) btn.innerText = label;
+        if (btnLogin) btnLogin.innerText = label;
+      },
+
+      toggleTheme() {
+        const curr = document.body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        this.setTheme(curr === 'light' ? 'dark' : 'light');
+      }
+    };
+    window.onload = () => app.init();
+  </script>
+</body>
+
+</html>
