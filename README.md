@@ -19,7 +19,7 @@ A premium, state-of-the-art web application for managing daily cash transactions
 1.  **Create a Google Sheet**: Open [sheets.new](https://sheets.new).
 2.  **Open Script Editor**: Go to `Extensions` > `Apps Script`.
 3.  **Paste Code**: Copy the contents of `Code.gs` into the script editor.
-4.  **Create HTML File**: In the script editor, click `+` > `HTML`, name it `Cashbook_App`, and paste the contents of `Cashbook_App.html`.
+4.  **Create HTML File**: In the script editor, click `+` > `HTML`, name it `Daily_Cashbook`, and paste the contents of `Daily Cashbook.html`.
 5.  **Deploy**: 
     - Click `Deploy` > `New Deployment`.
     - Select type `Web App`.
@@ -39,7 +39,7 @@ A premium, state-of-the-art web application for managing daily cash transactions
 
 ## 📂 Project Structure
 - `Code.gs`: Server-side logic for Google Apps Script.
-- `Cashbook_App.html`: Frontend UI, CSS, and Client-side logic.
+- `Daily Cashbook.html`: Frontend UI, CSS, and Client-side logic.
 - `README.md`: This documentation.
 
 ---
