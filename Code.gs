@@ -156,6 +156,12 @@ function doPost(e) {
         result = globalSearch(payload ? payload.query : '');
         break;
 
+      // GENERATE DAILY SHEET (separate action so verify is not delayed)
+      case 'generateDailySheet':
+        drawDailySheet(date || (payload && payload.Date));
+        result = { status: 'success' };
+        break;
+
       default:
         result = { status: 'error', message: 'Unknown action: ' + action };
     }
@@ -314,14 +320,12 @@ function updateOrAppendSummary(payload) {
         payload[h] !== undefined ? payload[h] : data[i][hi]
       );
       sheet.getRange(i + 1, 1, 1, headers.length).setValues([rowData]);
-      if (payload.Verified) { try { drawDailySheet(payload.Date); } catch(e) {} }
       return { status: 'success' };
     }
   }
 
   const rowData = headers.map(h => payload[h] !== undefined ? payload[h] : '');
   sheet.appendRow(rowData);
-  if (payload.Verified) { try { drawDailySheet(payload.Date); } catch(e) {} }
   return { status: 'success' };
 }
 
